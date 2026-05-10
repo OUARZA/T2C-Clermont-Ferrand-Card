@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.1.5";
+window.t2cClermontFerrandCardVersion = "0.1.6";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.1.5 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.1.6 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -113,7 +113,7 @@ class T2CClermontFerrandCard extends HTMLElement {
       }
 
       .t2c-table th {
-        background: var(--t2c-line-color, #b00010);
+        background: var(--t2c-header-color, #ab161b);
         color: #fff;
         font-weight: 600;
         padding: 10px 8px;
@@ -214,7 +214,7 @@ class T2CClermontFerrandCard extends HTMLElement {
     wrapper.className = "t2c-card";
 
     if (!this.config.entity) {
-      wrapper.style.setProperty("--t2c-line-color", this.config.color || "#b00010");
+      wrapper.style.setProperty("--t2c-header-color", "#ab161b");
       wrapper.innerHTML = `
         <h2 class="t2c-title">T2C Clermont-Ferrand</h2>
         <div class="t2c-config">Selectionnez l'entite passage_1 de l'arret a afficher.</div>
@@ -227,9 +227,7 @@ class T2CClermontFerrandCard extends HTMLElement {
 
     const lineLabel = this.config.line || this._getLineLabel(this.config.entity);
     const passages = Math.max(1, Math.min(Number(this.config.passages) || 5, 10));
-    const firstPassage = this._hass.states[this._getPassageEntity(1)];
-    const firstRoute = this._getRouteDisplay(firstPassage, lineLabel);
-    wrapper.style.setProperty("--t2c-line-color", firstRoute.color);
+    wrapper.style.setProperty("--t2c-header-color", "#ab161b");
 
     const title = document.createElement("h2");
     title.className = "t2c-title";

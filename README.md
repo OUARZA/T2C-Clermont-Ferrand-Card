@@ -28,7 +28,7 @@ Depuis l'editeur de dashboard Home Assistant :
 
 1. Ajouter une nouvelle carte.
 2. Choisir `T2C Clermont-Ferrand Card`.
-3. Selectionner l'entite `passage_1` de l'arret a afficher.
+3. Selectionner l'arret a afficher dans la liste. La liste affiche les capteurs `sensor.*_passage_1` deja presents dans Home Assistant.
 
 Configuration YAML minimale :
 
@@ -46,6 +46,23 @@ title: Les Chapelles
 passages: 5
 show_perturbations: true
 color: "#b00010"
+```
+
+## Diagnostic
+
+Si Home Assistant affiche `Custom element doesn't exist: t2c-clermontferrand-card`, ouvrir la console du navigateur sur le dashboard et executer :
+
+```js
+customElements.get("t2c-clermontferrand-card")
+window.t2cClermontFerrandCardVersion
+```
+
+Le premier appel doit retourner une classe JavaScript et le second doit retourner la version chargee de la carte.
+
+La ressource HACS doit etre de type `Module JavaScript` et pointer vers :
+
+```text
+/hacsfiles/t2c_clermontferrand_card/t2c_clermontferrand_card.js
 ```
 
 ## Options

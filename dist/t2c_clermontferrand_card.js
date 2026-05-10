@@ -1,3 +1,11 @@
+window.t2cClermontFerrandCardVersion = "0.1.2";
+
+console.info(
+  "%c T2C Clermont-Ferrand Card %c chargement 0.1.2 ",
+  "color: white; background: #b00010; font-weight: 700;",
+  "color: #b00010; background: transparent; font-weight: 700;",
+);
+
 class T2CClermontFerrandCard extends HTMLElement {
   static getStubConfig() {
     return {
@@ -339,6 +347,14 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
   _render() {
     if (!this._hass || !this.config) return;
 
+    const passageOptions = Object.values(this._hass.states)
+      .filter((state) => state.entity_id.startsWith("sensor.") && /_passage_1$/.test(state.entity_id))
+      .sort((a, b) => {
+        const labelA = this._getEntityLabel(a).toLocaleLowerCase("fr-FR");
+        const labelB = this._getEntityLabel(b).toLocaleLowerCase("fr-FR");
+        return labelA.localeCompare(labelB, "fr-FR");
+      });
+
     const root = document.createElement("div");
     root.innerHTML = `
       <style>
@@ -382,11 +398,15 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
       </style>
       <div class="editor">
         <div class="field">
-          <label for="entity">Entite passage_1</label>
-          <ha-entity-picker
-            id="entity"
-            allow-custom-entity
-          ></ha-entity-picker>
+          <label for="entity">Arret</label>
+          <select id="entity">
+            <option value="">Selectionner un arret</option>
+            ${passageOptions.map((state) => `
+              <option value="${this._escapeAttr(state.entity_id)}" ${state.entity_id === this.config.entity ? "selected" : ""}>
+                ${this._escapeHtml(this._getEntityLabel(state))}
+              </option>
+            `).join("")}
+          </select>
         </div>
         <div class="field">
           <label for="title">Titre personnalise</label>
@@ -407,26 +427,24 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
       </div>
     `;
 
-    const entityPicker = root.querySelector("#entity");
-    entityPicker.configValue = "entity";
-    entityPicker.hass = this._hass;
-    entityPicker.value = this.config.entity || "";
-    entityPicker.addEventListener("value-changed", (event) => {
-      this._valueChanged({
-        target: {
-          configValue: "entity",
-          value: event.detail.value,
-        },
-      });
-    });
-
-    for (const input of root.querySelectorAll("input")) {
+    for (const input of root.querySelectorAll("input, select")) {
       input.configValue = input.id;
       input.addEventListener("change", this._valueChanged.bind(this));
-      input.addEventListener("input", this._valueChanged.bind(this));
     }
 
     this.replaceChildren(root);
+  }
+
+  _getEntityLabel(state) {
+    const friendlyName = state.attributes?.friendly_name;
+    if (friendlyName) return friendlyName.replace(/\s*passage\s*1\s*$/i, "");
+    return state.entity_id;
+  }
+
+  _escapeHtml(value) {
+    const div = document.createElement("div");
+    div.textContent = String(value ?? "");
+    return div.innerHTML;
   }
 
   _escapeAttr(value) {
@@ -455,7 +473,7 @@ window.customCards.push({
 });
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargee ",
+  "%c T2C Clermont-Ferrand Card %c element enregistre ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );

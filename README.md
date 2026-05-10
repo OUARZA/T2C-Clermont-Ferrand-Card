@@ -90,6 +90,11 @@ Chaque capteur de passage peut contenir les attributs suivants :
 ```yaml
 destination: Royat Pl. Allard
 info: Temps reel
+route_id: B
+route_color: "#0069b4"
+route_text_color: "#ffffff"
 ```
 
 L'etat du capteur est utilise comme heure ou temps de depart.
+
+Les variantes `Route ID`, `Route color` et `Route text color` sont aussi prises en charge.

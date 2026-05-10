@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.1.3";
+window.t2cClermontFerrandCardVersion = "0.1.4";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.1.3 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.1.4 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -144,8 +144,8 @@ class T2CClermontFerrandCard extends HTMLElement {
         min-width: 32px;
         min-height: 28px;
         border-radius: 6px;
-        background: var(--t2c-line-color, #b00010);
-        color: #fff;
+        background: var(--route-color, var(--t2c-line-color, #b00010));
+        color: var(--route-text-color, #fff);
         font-weight: 700;
       }
 
@@ -253,15 +253,18 @@ class T2CClermontFerrandCard extends HTMLElement {
       const entityId = this._getPassageEntity(index);
       const state = this._hass.states[entityId];
       const row = document.createElement("tr");
+      const route = this._getRouteDisplay(state, lineLabel);
 
       if (!state) {
         row.innerHTML = `
-          <td><span class="t2c-line">${this._escape(lineLabel || "?")}</span></td>
+          <td><span class="t2c-line">${this._escape(route.label)}</span></td>
           <td class="t2c-empty" colspan="3">Entite introuvable : ${this._escape(entityId)}</td>
         `;
       } else {
+        row.style.setProperty("--route-color", route.color);
+        row.style.setProperty("--route-text-color", route.textColor);
         row.innerHTML = `
-          <td><span class="t2c-line">${this._escape(lineLabel || state.attributes.line || "?")}</span></td>
+          <td><span class="t2c-line">${this._escape(route.label)}</span></td>
           <td class="t2c-destination">${this._escape(state.attributes.destination || "-")}</td>
           <td class="t2c-time">${this._escape(state.state || "-")}</td>
           <td class="t2c-info">${this._escape(state.attributes.info || "")}</td>
@@ -301,6 +304,23 @@ class T2CClermontFerrandCard extends HTMLElement {
     const div = document.createElement("div");
     div.textContent = String(value ?? "");
     return div.innerHTML;
+  }
+
+  _getRouteDisplay(state, fallbackLabel) {
+    const attributes = state?.attributes || {};
+    const label = attributes.route_id || attributes.Route_ID || attributes["Route ID"] || attributes.line || attributes.Line || fallbackLabel || "?";
+    const color = this._normalizeColor(attributes.route_color || attributes.Route_color || attributes["Route color"] || this.config.color || "#b00010", "#b00010");
+    const textColor = this._normalizeColor(attributes.route_text_color || attributes.Route_text_color || attributes["Route text color"] || "#ffffff", "#ffffff");
+
+    return { label, color, textColor };
+  }
+
+  _normalizeColor(value, fallback) {
+    if (!value) return fallback;
+    const color = String(value).trim();
+    if (/^#[0-9a-f]{3}([0-9a-f]{3})?$/i.test(color)) return color;
+    if (/^[0-9a-f]{3}([0-9a-f]{3})?$/i.test(color)) return `#${color}`;
+    return fallback;
   }
 }
 

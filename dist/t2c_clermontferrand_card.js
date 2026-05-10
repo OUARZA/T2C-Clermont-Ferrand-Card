@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.1.7";
+window.t2cClermontFerrandCardVersion = "0.1.8";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.1.7 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.1.8 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -12,6 +12,7 @@ class T2CClermontFerrandCard extends HTMLElement {
       entity: "",
       title: "",
       passages: 5,
+      show_network_info: false,
     };
   }
 
@@ -24,6 +25,7 @@ class T2CClermontFerrandCard extends HTMLElement {
       entity: "",
       title: "",
       passages: 5,
+      show_network_info: false,
       ...config,
     };
 
@@ -174,21 +176,21 @@ class T2CClermontFerrandCard extends HTMLElement {
         line-height: 1.45;
       }
 
-      .t2c-alert {
+      .t2c-network-info {
         margin-top: 16px;
         border-radius: 8px;
-        border: 1px solid rgba(214, 152, 0, 0.32);
-        background: var(--warning-color, #fff3cd);
+        border: 1px solid var(--divider-color);
+        background: var(--secondary-background-color);
         color: var(--primary-text-color);
         padding: 12px;
       }
 
-      .t2c-alert-title {
+      .t2c-network-info-title {
         font-weight: 700;
         margin-bottom: 4px;
       }
 
-      .t2c-alert-updated {
+      .t2c-network-info-updated {
         color: var(--secondary-text-color);
         font-size: 12px;
         margin-top: 8px;
@@ -283,6 +285,20 @@ class T2CClermontFerrandCard extends HTMLElement {
 
     wrapper.appendChild(table);
 
+    if (this.config.show_network_info) {
+      const networkInfo = this._getNetworkInfoDisplay();
+      if (networkInfo) {
+        const info = document.createElement("div");
+        info.className = "t2c-network-info";
+        info.innerHTML = `
+          <div class="t2c-network-info-title">${this._escape(networkInfo.title)}</div>
+          ${networkInfo.text ? `<div>${this._escape(networkInfo.text)}</div>` : ""}
+          ${networkInfo.updatedAt ? `<div class="t2c-network-info-updated">Mise a jour : ${this._escape(networkInfo.updatedAt)}</div>` : ""}
+        `;
+        wrapper.appendChild(info);
+      }
+    }
+
     card.appendChild(style);
     card.appendChild(wrapper);
     this.replaceChildren(card);
@@ -306,7 +322,7 @@ class T2CClermontFerrandCard extends HTMLElement {
     const attributes = state?.attributes || {};
     const label = this._getAttribute(attributes, ["line", "route_short_name", "route_id", "Route ID"]) || fallbackLabel || "?";
     const color = this._normalizeColor(
-      this._getAttribute(attributes, ["route_color", "Route color", "route color"]) || this.config.color || "#b00010",
+      this._getAttribute(attributes, ["route_color", "Route color", "route color"]) || "#b00010",
       "#b00010",
     );
     const textColor = this._normalizeColor(
@@ -335,6 +351,37 @@ class T2CClermontFerrandCard extends HTMLElement {
     ].filter(Boolean).join("\n");
 
     return { icon, tooltip };
+  }
+
+  _getNetworkInfoDisplay() {
+    const state = this._findNetworkInfoState();
+    if (!state) return undefined;
+
+    const attributes = state.attributes || {};
+    const title = String(
+      this._getAttribute(attributes, ["alert_title", "Alert title", "title", "info", "friendly_name"]) || state.state || "Informations reseau",
+    ).trim();
+    const text = String(this._getAttribute(attributes, ["alert_text", "Alert text", "text", "message", "description"]) || "").trim();
+    const updatedAt = this._getAttribute(attributes, ["updated_at", "Updated at", "last_update"]);
+
+    if (!title && !text) return undefined;
+
+    return {
+      title: title || "Informations reseau",
+      text,
+      updatedAt: updatedAt ? this._formatUpdatedAt(updatedAt) : "",
+    };
+  }
+
+  _findNetworkInfoState() {
+    const states = Object.values(this._hass?.states || {});
+    const byEntity = states.find((state) => /informations?_reseau|network_?info/i.test(state.entity_id));
+    if (byEntity) return byEntity;
+
+    return states.find((state) => {
+      const friendlyName = state.attributes?.friendly_name || "";
+      return /information[s]? reseau|network info/i.test(friendlyName);
+    });
   }
 
   _isTruthy(value) {
@@ -379,7 +426,7 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
       entity: "",
       title: "",
       passages: 5,
-      color: "#b00010",
+      show_network_info: false,
       ...config,
     };
     this._render();
@@ -483,10 +530,10 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
           <label for="passages">Nombre de passages</label>
           <input id="passages" type="number" min="1" max="10" value="${Number(this.config.passages) || 5}">
         </div>
-        <div class="field">
-          <label for="color">Couleur de ligne</label>
-          <input id="color" type="color" value="${this._escapeAttr(this.config.color || "#b00010")}">
-        </div>
+        <label class="checkbox">
+          <input id="show_network_info" type="checkbox" ${this.config.show_network_info ? "checked" : ""}>
+          Afficher l'info reseau
+        </label>
       </div>
     `;
 

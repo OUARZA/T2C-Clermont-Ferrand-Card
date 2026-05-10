@@ -44,7 +44,7 @@ type: custom:t2c-clermontferrand-card
 entity: sensor.ligne_b_direction_royat_pl_allard_arret_les_chapelles_passage_1
 title: Les Chapelles
 passages: 5
-color: "#b00010"
+show_network_info: false
 ```
 
 ## Diagnostic
@@ -71,7 +71,7 @@ La ressource HACS doit etre de type `Module JavaScript` et pointer vers :
 | `entity` | Oui |  | Entite `passage_1` de l'arret a afficher. |
 | `title` | Non | Nom de l'entite | Titre affiche en haut de la carte. |
 | `passages` | Non | `5` | Nombre de passages a afficher, entre 1 et 10. |
-| `color` | Non | `#b00010` | Couleur principale de la ligne. |
+| `show_network_info` | Non | `false` | Affiche le bloc d'information generale du reseau si l'entite est detectee. |
 
 ## Convention d'entites attendue
 

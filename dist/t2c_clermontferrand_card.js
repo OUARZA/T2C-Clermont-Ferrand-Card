@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.1.2";
+window.t2cClermontFerrandCardVersion = "0.1.3";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.1.2 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.1.3 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -319,7 +319,12 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    this._render();
+    const signature = this._getPassageOptionsSignature();
+
+    if (!this._rendered || signature !== this._passageOptionsSignature) {
+      this._passageOptionsSignature = signature;
+      this._render();
+    }
   }
 
   _valueChanged(event) {
@@ -347,13 +352,7 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
   _render() {
     if (!this._hass || !this.config) return;
 
-    const passageOptions = Object.values(this._hass.states)
-      .filter((state) => state.entity_id.startsWith("sensor.") && /_passage_1$/.test(state.entity_id))
-      .sort((a, b) => {
-        const labelA = this._getEntityLabel(a).toLocaleLowerCase("fr-FR");
-        const labelB = this._getEntityLabel(b).toLocaleLowerCase("fr-FR");
-        return labelA.localeCompare(labelB, "fr-FR");
-      });
+    const passageOptions = this._getPassageOptions();
 
     const root = document.createElement("div");
     root.innerHTML = `
@@ -433,6 +432,26 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
     }
 
     this.replaceChildren(root);
+    this._rendered = true;
+    this._passageOptionsSignature = this._getPassageOptionsSignature();
+  }
+
+  _getPassageOptions() {
+    if (!this._hass?.states) return [];
+
+    return Object.values(this._hass.states)
+      .filter((state) => state.entity_id.startsWith("sensor.") && /_passage_1$/.test(state.entity_id))
+      .sort((a, b) => {
+        const labelA = this._getEntityLabel(a).toLocaleLowerCase("fr-FR");
+        const labelB = this._getEntityLabel(b).toLocaleLowerCase("fr-FR");
+        return labelA.localeCompare(labelB, "fr-FR");
+      });
+  }
+
+  _getPassageOptionsSignature() {
+    return this._getPassageOptions()
+      .map((state) => `${state.entity_id}:${this._getEntityLabel(state)}`)
+      .join("|");
   }
 
   _getEntityLabel(state) {

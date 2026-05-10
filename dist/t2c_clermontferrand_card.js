@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.1.6";
+window.t2cClermontFerrandCardVersion = "0.1.7";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.1.6 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.1.7 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -12,7 +12,6 @@ class T2CClermontFerrandCard extends HTMLElement {
       entity: "",
       title: "",
       passages: 5,
-      show_perturbations: true,
     };
   }
 
@@ -25,7 +24,6 @@ class T2CClermontFerrandCard extends HTMLElement {
       entity: "",
       title: "",
       passages: 5,
-      show_perturbations: true,
       ...config,
     };
 
@@ -154,6 +152,13 @@ class T2CClermontFerrandCard extends HTMLElement {
         overflow-wrap: anywhere;
       }
 
+      .t2c-alert-icon {
+        --mdc-icon-size: 22px;
+        color: var(--warning-color, #f9ab00);
+        cursor: help;
+        vertical-align: middle;
+      }
+
       .t2c-time {
         font-weight: 700;
         white-space: nowrap;
@@ -264,11 +269,12 @@ class T2CClermontFerrandCard extends HTMLElement {
       } else {
         row.style.setProperty("--route-color", route.color);
         row.style.setProperty("--route-text-color", route.textColor);
+        const alert = this._getAlertDisplay(state);
         row.innerHTML = `
           <td><span class="t2c-line">${this._escape(route.label)}</span></td>
           <td class="t2c-destination">${this._escape(state.attributes.destination || "-")}</td>
           <td class="t2c-time">${this._escape(state.state || "-")}</td>
-          <td class="t2c-info">${this._escape(state.attributes.info || "")}</td>
+          <td class="t2c-info">${alert ? `<ha-icon class="t2c-alert-icon" icon="${this._escapeAttr(alert.icon)}" title="${this._escapeAttr(alert.tooltip)}"></ha-icon>` : ""}</td>
         `;
       }
 
@@ -276,25 +282,6 @@ class T2CClermontFerrandCard extends HTMLElement {
     }
 
     wrapper.appendChild(table);
-
-    if (this.config.show_perturbations) {
-      const perturbation = this._hass.states[this._getPerturbationEntity()];
-      const titleText = perturbation?.attributes?.title;
-      const bodyText = perturbation?.attributes?.text;
-
-      if (perturbation && (titleText || bodyText)) {
-        const alert = document.createElement("div");
-        alert.className = "t2c-alert";
-
-        const updatedAt = this._formatUpdatedAt(perturbation.attributes.updated_at);
-        alert.innerHTML = `
-          <div class="t2c-alert-title">Perturbation</div>
-          <div>${this._escape(titleText || "")}${titleText && bodyText ? " : " : ""}${this._escape(bodyText || "")}</div>
-          ${updatedAt ? `<div class="t2c-alert-updated">Mise a jour : ${this._escape(updatedAt)}</div>` : ""}
-        `;
-        wrapper.appendChild(alert);
-      }
-    }
 
     card.appendChild(style);
     card.appendChild(wrapper);
@@ -305,6 +292,14 @@ class T2CClermontFerrandCard extends HTMLElement {
     const div = document.createElement("div");
     div.textContent = String(value ?? "");
     return div.innerHTML;
+  }
+
+  _escapeAttr(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
   }
 
   _getRouteDisplay(state, fallbackLabel) {
@@ -320,6 +315,36 @@ class T2CClermontFerrandCard extends HTMLElement {
     );
 
     return { label, color, textColor };
+  }
+
+  _getAlertDisplay(state) {
+    const attributes = state?.attributes || {};
+    const hasAlert = this._isTruthy(this._getAttribute(attributes, ["has_alert", "Has alert"]));
+    const title = String(this._getAttribute(attributes, ["alert_title", "Alert title", "info"]) || "").trim();
+    const text = String(this._getAttribute(attributes, ["alert_text", "Alert text"]) || "").trim();
+    const updatedAt = this._getAttribute(attributes, ["updated_at", "Updated at"]);
+    const icon = this._getAttribute(attributes, ["alert_icon", "Alert icon"]) || "mdi:alert-circle";
+
+    if (!hasAlert && !title && !text) return undefined;
+    if (!hasAlert && title.toLocaleLowerCase("fr-FR") === "aucune info" && !text) return undefined;
+
+    const tooltip = [
+      title ? `Titre : ${title}` : "",
+      text ? `Texte : ${text}` : "",
+      updatedAt ? `Mise a jour : ${this._formatUpdatedAt(updatedAt)}` : "",
+    ].filter(Boolean).join("\n");
+
+    return { icon, tooltip };
+  }
+
+  _isTruthy(value) {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "number") return value !== 0;
+    if (typeof value === "string") {
+      return ["true", "1", "yes", "oui"].includes(value.trim().toLocaleLowerCase("fr-FR"));
+    }
+
+    return false;
   }
 
   _getAttribute(attributes, names) {
@@ -354,7 +379,6 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
       entity: "",
       title: "",
       passages: 5,
-      show_perturbations: true,
       color: "#b00010",
       ...config,
     };
@@ -463,10 +487,6 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
           <label for="color">Couleur de ligne</label>
           <input id="color" type="color" value="${this._escapeAttr(this.config.color || "#b00010")}">
         </div>
-        <label class="checkbox">
-          <input id="show_perturbations" type="checkbox" ${this.config.show_perturbations ? "checked" : ""}>
-          Afficher les perturbations
-        </label>
       </div>
     `;
 

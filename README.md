@@ -44,7 +44,6 @@ type: custom:t2c-clermontferrand-card
 entity: sensor.ligne_b_direction_royat_pl_allard_arret_les_chapelles_passage_1
 title: Les Chapelles
 passages: 5
-show_perturbations: true
 color: "#b00010"
 ```
 
@@ -72,7 +71,6 @@ La ressource HACS doit etre de type `Module JavaScript` et pointer vers :
 | `entity` | Oui |  | Entite `passage_1` de l'arret a afficher. |
 | `title` | Non | Nom de l'entite | Titre affiche en haut de la carte. |
 | `passages` | Non | `5` | Nombre de passages a afficher, entre 1 et 10. |
-| `show_perturbations` | Non | `true` | Affiche le bloc perturbation si l'entite existe. |
 | `color` | Non | `#b00010` | Couleur principale de la ligne. |
 
 ## Convention d'entites attendue
@@ -93,8 +91,15 @@ info: Temps reel
 route_id: B
 route_color: "#0069b4"
 route_text_color: "#ffffff"
+has_alert: true
+alert_icon: mdi:alert-circle
+alert_title: J. Mermoz reportes
+alert_text: En raison de travaux, les arrets J. Mermoz seront reportes.
+updated_at: "2026-04-27T10:08:33"
 ```
 
 L'etat du capteur est utilise comme heure ou temps de depart.
 
 Les variantes `Route ID`, `Route color` et `Route text color` sont aussi prises en charge.
+
+La colonne `Infos` reste vide quand il n'y a pas d'alerte. Si `has_alert` vaut `true`, la carte affiche l'icone `alert_icon` avec une infobulle contenant le titre, le texte et la date de mise a jour.

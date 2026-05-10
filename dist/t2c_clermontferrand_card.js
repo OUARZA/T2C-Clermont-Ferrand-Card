@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.1.4";
+window.t2cClermontFerrandCardVersion = "0.1.5";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.1.4 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.1.5 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -212,9 +212,9 @@ class T2CClermontFerrandCard extends HTMLElement {
 
     const wrapper = document.createElement("div");
     wrapper.className = "t2c-card";
-    wrapper.style.setProperty("--t2c-line-color", this.config.color || "#b00010");
 
     if (!this.config.entity) {
+      wrapper.style.setProperty("--t2c-line-color", this.config.color || "#b00010");
       wrapper.innerHTML = `
         <h2 class="t2c-title">T2C Clermont-Ferrand</h2>
         <div class="t2c-config">Selectionnez l'entite passage_1 de l'arret a afficher.</div>
@@ -227,6 +227,9 @@ class T2CClermontFerrandCard extends HTMLElement {
 
     const lineLabel = this.config.line || this._getLineLabel(this.config.entity);
     const passages = Math.max(1, Math.min(Number(this.config.passages) || 5, 10));
+    const firstPassage = this._hass.states[this._getPassageEntity(1)];
+    const firstRoute = this._getRouteDisplay(firstPassage, lineLabel);
+    wrapper.style.setProperty("--t2c-line-color", firstRoute.color);
 
     const title = document.createElement("h2");
     title.className = "t2c-title";
@@ -308,11 +311,34 @@ class T2CClermontFerrandCard extends HTMLElement {
 
   _getRouteDisplay(state, fallbackLabel) {
     const attributes = state?.attributes || {};
-    const label = attributes.route_id || attributes.Route_ID || attributes["Route ID"] || attributes.line || attributes.Line || fallbackLabel || "?";
-    const color = this._normalizeColor(attributes.route_color || attributes.Route_color || attributes["Route color"] || this.config.color || "#b00010", "#b00010");
-    const textColor = this._normalizeColor(attributes.route_text_color || attributes.Route_text_color || attributes["Route text color"] || "#ffffff", "#ffffff");
+    const label = this._getAttribute(attributes, ["line", "route_short_name", "route_id", "Route ID"]) || fallbackLabel || "?";
+    const color = this._normalizeColor(
+      this._getAttribute(attributes, ["route_color", "Route color", "route color"]) || this.config.color || "#b00010",
+      "#b00010",
+    );
+    const textColor = this._normalizeColor(
+      this._getAttribute(attributes, ["route_text_color", "Route text color", "route text color"]) || "#ffffff",
+      "#ffffff",
+    );
 
     return { label, color, textColor };
+  }
+
+  _getAttribute(attributes, names) {
+    const normalizedEntries = Object.entries(attributes).map(([key, value]) => [
+      key.toLocaleLowerCase("en-US").replace(/[^a-z0-9]/g, ""),
+      value,
+    ]);
+
+    for (const name of names) {
+      const normalizedName = name.toLocaleLowerCase("en-US").replace(/[^a-z0-9]/g, "");
+      const match = normalizedEntries.find(([key]) => key === normalizedName);
+      if (match && match[1] !== undefined && match[1] !== null && match[1] !== "") {
+        return match[1];
+      }
+    }
+
+    return undefined;
   }
 
   _normalizeColor(value, fallback) {

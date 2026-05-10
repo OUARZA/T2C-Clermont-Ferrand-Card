@@ -450,5 +450,12 @@ window.customCards = window.customCards || [];
 window.customCards.push({
   type: "t2c-clermontferrand-card",
   name: "T2C Clermont-Ferrand Card",
+  preview: true,
   description: "Affiche les prochains passages et perturbations d'un arret T2C.",
 });
+
+console.info(
+  "%c T2C Clermont-Ferrand Card %c chargee ",
+  "color: white; background: #b00010; font-weight: 700;",
+  "color: #b00010; background: transparent; font-weight: 700;",
+);

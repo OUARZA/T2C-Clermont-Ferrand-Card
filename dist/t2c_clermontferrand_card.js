@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.1.8";
+window.t2cClermontFerrandCardVersion = "0.1.9";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.1.8 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.1.9 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -345,8 +345,8 @@ class T2CClermontFerrandCard extends HTMLElement {
     if (!hasAlert && title.toLocaleLowerCase("fr-FR") === "aucune info" && !text) return undefined;
 
     const tooltip = [
-      title ? `Titre : ${title}` : "",
-      text ? `Texte : ${text}` : "",
+      title,
+      text,
       updatedAt ? `Mise a jour : ${this._formatUpdatedAt(updatedAt)}` : "",
     ].filter(Boolean).join("\n");
 

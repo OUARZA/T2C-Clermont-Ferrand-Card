@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.1.9";
+window.t2cClermontFerrandCardVersion = "0.2.0";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.1.9 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.2.0 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -157,8 +157,28 @@ class T2CClermontFerrandCard extends HTMLElement {
       .t2c-alert-icon {
         --mdc-icon-size: 22px;
         color: var(--warning-color, #f9ab00);
-        cursor: help;
+        cursor: pointer;
         vertical-align: middle;
+      }
+
+      .t2c-alert-button {
+        align-items: center;
+        background: transparent;
+        border: 0;
+        border-radius: 6px;
+        color: inherit;
+        cursor: pointer;
+        display: inline-flex;
+        height: 32px;
+        justify-content: center;
+        padding: 0;
+        width: 32px;
+      }
+
+      .t2c-alert-button:hover,
+      .t2c-alert-button:focus-visible {
+        background: color-mix(in srgb, var(--warning-color, #f9ab00) 18%, transparent);
+        outline: none;
       }
 
       .t2c-time {
@@ -196,6 +216,31 @@ class T2CClermontFerrandCard extends HTMLElement {
         margin-top: 8px;
       }
 
+      .t2c-alert-detail {
+        margin-top: 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(249, 171, 0, 0.35);
+        background: color-mix(in srgb, var(--warning-color, #f9ab00) 16%, var(--card-background-color));
+        color: var(--primary-text-color);
+        padding: 12px;
+        text-align: left;
+      }
+
+      .t2c-alert-detail-title {
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .t2c-alert-detail-text {
+        line-height: 1.45;
+      }
+
+      .t2c-alert-detail-updated {
+        color: var(--secondary-text-color);
+        font-size: 12px;
+        margin-top: 8px;
+      }
+
       @media (max-width: 420px) {
         .t2c-card {
           padding: 12px;
@@ -211,8 +256,8 @@ class T2CClermontFerrandCard extends HTMLElement {
           font-size: 13px;
         }
 
-        .t2c-info {
-          display: none;
+        .t2c-line {
+          min-width: 28px;
         }
       }
     `;
@@ -276,7 +321,7 @@ class T2CClermontFerrandCard extends HTMLElement {
           <td><span class="t2c-line">${this._escape(route.label)}</span></td>
           <td class="t2c-destination">${this._escape(state.attributes.destination || "-")}</td>
           <td class="t2c-time">${this._escape(state.state || "-")}</td>
-          <td class="t2c-info">${alert ? `<ha-icon class="t2c-alert-icon" icon="${this._escapeAttr(alert.icon)}" title="${this._escapeAttr(alert.tooltip)}"></ha-icon>` : ""}</td>
+          <td class="t2c-info">${alert ? `<button class="t2c-alert-button" type="button" data-alert-index="${index}" aria-label="Afficher le detail de l'alerte"><ha-icon class="t2c-alert-icon" icon="${this._escapeAttr(alert.icon)}"></ha-icon></button>` : ""}</td>
         `;
       }
 
@@ -284,6 +329,12 @@ class T2CClermontFerrandCard extends HTMLElement {
     }
 
     wrapper.appendChild(table);
+
+    const alertDetail = document.createElement("div");
+    alertDetail.className = "t2c-alert-detail";
+    alertDetail.hidden = true;
+    wrapper.appendChild(alertDetail);
+    this._renderAlertDetail(alertDetail, this._activeAlertIndex);
 
     if (this.config.show_network_info) {
       const networkInfo = this._getNetworkInfoDisplay();
@@ -302,6 +353,7 @@ class T2CClermontFerrandCard extends HTMLElement {
     card.appendChild(style);
     card.appendChild(wrapper);
     this.replaceChildren(card);
+    this._bindAlertButtons();
   }
 
   _escape(value) {
@@ -344,13 +396,52 @@ class T2CClermontFerrandCard extends HTMLElement {
     if (!hasAlert && !title && !text) return undefined;
     if (!hasAlert && title.toLocaleLowerCase("fr-FR") === "aucune info" && !text) return undefined;
 
-    const tooltip = [
+    return {
+      icon,
       title,
       text,
-      updatedAt ? `Mise a jour : ${this._formatUpdatedAt(updatedAt)}` : "",
-    ].filter(Boolean).join("\n");
+      updatedAt: updatedAt ? this._formatUpdatedAt(updatedAt) : "",
+    };
+  }
 
-    return { icon, tooltip };
+  _bindAlertButtons() {
+    const detail = this.querySelector(".t2c-alert-detail");
+    if (!detail) return;
+
+    for (const button of this.querySelectorAll(".t2c-alert-button")) {
+      button.addEventListener("click", () => {
+        const index = Number(button.dataset.alertIndex);
+        const state = this._hass.states[this._getPassageEntity(index)];
+        const alert = this._getAlertDisplay(state);
+        if (!alert) return;
+
+        const isSameAlert = this._activeAlertIndex === index && !detail.hidden;
+        this._activeAlertIndex = isSameAlert ? undefined : index;
+
+        if (isSameAlert) {
+          detail.hidden = true;
+          detail.replaceChildren();
+          return;
+        }
+
+        this._renderAlertDetail(detail, index);
+      });
+    }
+  }
+
+  _renderAlertDetail(detail, index) {
+    if (!detail || !index) return;
+
+    const state = this._hass.states[this._getPassageEntity(index)];
+    const alert = this._getAlertDisplay(state);
+    if (!alert) return;
+
+    detail.hidden = false;
+    detail.innerHTML = `
+      ${alert.title ? `<div class="t2c-alert-detail-title">${this._escape(alert.title)}</div>` : ""}
+      ${alert.text ? `<div class="t2c-alert-detail-text">${this._escape(alert.text)}</div>` : ""}
+      ${alert.updatedAt ? `<div class="t2c-alert-detail-updated">Mise a jour : ${this._escape(alert.updatedAt)}</div>` : ""}
+    `;
   }
 
   _getNetworkInfoDisplay() {

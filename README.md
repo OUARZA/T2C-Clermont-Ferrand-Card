@@ -10,7 +10,7 @@ Carte Lovelace pour Home Assistant permettant d'afficher les prochains passages 
 - Affichage automatique des prochains passages a partir de l'entite `passage_1`.
 - Pastilles de ligne colorees avec les attributs `route_color` et `route_text_color`.
 - Colonne `Infos` vide par defaut, avec une icone d'alerte quand `has_alert` vaut `true`.
-- Infobulle au survol de l'icone avec le titre, le texte et la date de mise a jour.
+- Bloc de detail au clic ou au tap sur l'icone, compatible desktop et mobile.
 - Bloc optionnel pour afficher l'information generale du reseau.
 - Compatible installation HACS en categorie `Dashboard`.
 
@@ -107,7 +107,7 @@ Les noms d'attributs sont lus de facon souple. Les variantes comme `Route ID`, `
 
 La colonne `Infos` reste vide quand il n'y a pas d'alerte.
 
-Si `has_alert` vaut `true`, la carte affiche l'icone indiquee par `alert_icon`. Au survol, l'infobulle affiche le titre, le texte puis la date de mise a jour :
+Si `has_alert` vaut `true`, la carte affiche l'icone indiquee par `alert_icon`. Cliquer ou appuyer sur l'icone affiche un bloc de detail sous le tableau, compatible desktop et mobile :
 
 ```text
 ...

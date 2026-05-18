@@ -1,5 +1,7 @@
 # T2C Clermont-Ferrand Card
 
+![Logo T2C Clermont-Ferrand](logo.png)
+
 Carte Lovelace pour Home Assistant permettant d'afficher les prochains passages exposes par l'integration `t2c_clermontferrand`.
 
 ![Apercu de la carte T2C Clermont-Ferrand](docs/preview.png)
@@ -25,7 +27,7 @@ Carte Lovelace pour Home Assistant permettant d'afficher les prochains passages 
 Ressource attendue :
 
 ```text
-/hacsfiles/t2c_clermontferrand_card/t2c_clermontferrand_card.js
+/hacsfiles/T2C-Clermont-Ferrand-Card/t2c_clermont-ferrand_card.js
 ```
 
 ## Utilisation

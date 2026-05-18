@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.2.1";
+window.t2cClermontFerrandCardVersion = "0.2.3";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.2.1 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.2.3 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -216,6 +216,13 @@ class T2CClermontFerrandCard extends HTMLElement {
         margin-top: 8px;
       }
 
+      .t2c-theoretical-note {
+        color: var(--secondary-text-color);
+        font-size: 12px;
+        margin-top: 8px;
+        text-align: left;
+      }
+
       .t2c-alert-detail {
         margin-top: 16px;
         border-radius: 8px;
@@ -301,6 +308,7 @@ class T2CClermontFerrandCard extends HTMLElement {
     `;
 
     const tbody = table.querySelector("tbody");
+    let hasTheoreticalTime = false;
 
     for (let index = 1; index <= passages; index += 1) {
       const entityId = this._getPassageEntity(index);
@@ -317,10 +325,12 @@ class T2CClermontFerrandCard extends HTMLElement {
         row.style.setProperty("--route-color", route.color);
         row.style.setProperty("--route-text-color", route.textColor);
         const alert = this._getAlertDisplay(state);
+        const departure = String(state.state || "-");
+        hasTheoreticalTime = hasTheoreticalTime || departure.includes("*");
         row.innerHTML = `
           <td><span class="t2c-line">${this._escape(route.label)}</span></td>
           <td class="t2c-destination">${this._escape(state.attributes.destination || "-")}</td>
-          <td class="t2c-time">${this._escape(state.state || "-")}</td>
+          <td class="t2c-time">${this._escape(departure)}</td>
           <td class="t2c-info">${alert ? `<button class="t2c-alert-button" type="button" data-alert-index="${index}" aria-label="Afficher le detail de l'alerte"><ha-icon class="t2c-alert-icon" icon="${this._escapeAttr(alert.icon)}"></ha-icon></button>` : ""}</td>
         `;
       }
@@ -329,6 +339,13 @@ class T2CClermontFerrandCard extends HTMLElement {
     }
 
     wrapper.appendChild(table);
+
+    if (hasTheoreticalTime) {
+      const note = document.createElement("div");
+      note.className = "t2c-theoretical-note";
+      note.textContent = "* horaires théoriques";
+      wrapper.appendChild(note);
+    }
 
     const alertDetail = document.createElement("div");
     alertDetail.className = "t2c-alert-detail";

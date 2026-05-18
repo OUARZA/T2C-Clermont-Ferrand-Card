@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.2.0";
+window.t2cClermontFerrandCardVersion = "0.2.1";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.2.0 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.2.1 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -449,10 +449,11 @@ class T2CClermontFerrandCard extends HTMLElement {
     if (!state) return undefined;
 
     const attributes = state.attributes || {};
-    const title = String(
-      this._getAttribute(attributes, ["alert_title", "Alert title", "title", "info", "friendly_name"]) || state.state || "Informations reseau",
+    const stateMessage = this._isDisplayableState(state.state) ? String(state.state).trim() : "";
+    const title = String(this._getAttribute(attributes, ["alert_title", "Alert title", "title"]) || "Informations reseau").trim();
+    const text = String(
+      this._getAttribute(attributes, ["alert_text", "Alert text", "text", "message", "description", "info"]) || stateMessage,
     ).trim();
-    const text = String(this._getAttribute(attributes, ["alert_text", "Alert text", "text", "message", "description"]) || "").trim();
     const updatedAt = this._getAttribute(attributes, ["updated_at", "Updated at", "last_update"]);
 
     if (!title && !text) return undefined;
@@ -462,6 +463,12 @@ class T2CClermontFerrandCard extends HTMLElement {
       text,
       updatedAt: updatedAt ? this._formatUpdatedAt(updatedAt) : "",
     };
+  }
+
+  _isDisplayableState(value) {
+    if (value === undefined || value === null) return false;
+    const state = String(value).trim().toLocaleLowerCase("fr-FR");
+    return Boolean(state) && !["unknown", "unavailable", "none", "null"].includes(state);
   }
 
   _findNetworkInfoState() {

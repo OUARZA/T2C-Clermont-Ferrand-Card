@@ -139,6 +139,8 @@ updated_at: "2026-05-09T14:06:00"
 
 Les variantes `info`, `message`, `description`, `Alert title`, `Alert text` et `Updated at` sont aussi prises en charge.
 
+Si aucun attribut de texte n'est fourni, l'etat du capteur est utilise comme message, sauf pour les etats techniques comme `unknown` ou `unavailable`.
+
 ## Diagnostic
 
 Si Home Assistant affiche `Custom element doesn't exist: t2c-clermontferrand-card`, ouvrir la console du navigateur sur le dashboard et executer :

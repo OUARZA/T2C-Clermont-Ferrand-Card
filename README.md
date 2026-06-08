@@ -1,7 +1,5 @@
 # T2C Clermont-Ferrand Card
 
-<img src="logo.png" alt="Logo T2C Clermont-Ferrand" width="100">
-
 Carte Lovelace pour Home Assistant permettant d'afficher les prochains passages exposés par l'integration `t2c_clermontferrand`.
 
 ![Apercu de la carte T2C Clermont-Ferrand](docs/preview.png)

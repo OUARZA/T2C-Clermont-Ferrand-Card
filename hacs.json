@@ -3,4 +3,5 @@
   "render_readme": true,
   "homeassistant": "2024.4.0",
   "filename": "t2c_clermont-ferrand_card.js"
+  "country": ["FR"]
 }

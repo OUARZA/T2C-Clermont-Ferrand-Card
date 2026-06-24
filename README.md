@@ -152,3 +152,7 @@ window.t2cClermontFerrandCardVersion
 Le premier appel doit retourner une classe JavaScript et le second doit retourner la version chargee de la carte.
 
 Si les deux valeurs sont `undefined`, Home Assistant n'a pas encore charge la ressource. Verifier le chemin, le type `Module JavaScript`, puis vider le cache du navigateur.
+
+## Licence
+
+Ce projet est distribue sous licence MIT. Voir [LICENSE](LICENSE).

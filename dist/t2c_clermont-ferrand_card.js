@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.2.3";
+window.t2cClermontFerrandCardVersion = "0.2.6";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.2.3 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.2.6 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );

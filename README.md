@@ -8,10 +8,12 @@ Carte Lovelace pour Home Assistant permettant d'afficher les prochains passages 
 
 - Selection de l'arret depuis l'editeur visuel Home Assistant.
 - Affichage automatique des prochains passages a partir de l'entite `passage_1`.
+- Nombre de passages réglable de 1 à 6 (5 par défaut).
 - Pastilles de ligne colorees avec les attributs `route_color` et `route_text_color`.
 - Colonne `Infos` vide par defaut, avec une icone d'alerte quand `has_alert` vaut `true`.
 - Bloc de detail au clic ou au tap sur l'icone, compatible desktop et mobile.
-- Note `* horaires théoriques` affichee automatiquement si au moins un depart contient `*`.
+- Horaires théoriques affichés sans astérisque ni légende.
+- Petite icône verte à côté des départs en temps réel, avec l'infobulle « Temps réel ».
 - Bloc optionnel pour afficher l'information generale du reseau.
 - Compatible installation HACS en categorie `Dashboard`.
 
@@ -28,6 +30,27 @@ Ressource attendue :
 ```text
 /hacsfiles/T2C-Clermont-Ferrand-Card/t2c_clermont-ferrand_card.js
 ```
+
+Conserver la ressource créée par HACS et vérifier son chemin dans les paramètres du tableau de bord. Ne pas ajouter une deuxième ressource pour la même carte.
+
+## Installation manuelle avec FileZilla
+
+Le fichier à transférer est `dist/t2c_clermont-ferrand_card.js` dans ce dépôt. Les modifications locales ne sont pas automatiquement installées dans Home Assistant ni publiées sur GitHub.
+
+Pour une installation qui conserve le sous-dossier `dist` :
+
+1. Transférer le fichier vers `/config/www/community/t2c_clermontferrand_card/dist/t2c_clermont-ferrand_card.js`.
+2. Ajouter ou modifier la ressource du tableau de bord avec le type **Module JavaScript** et cette URL :
+
+   ```text
+   /local/community/t2c_clermontferrand_card/dist/t2c_clermont-ferrand_card.js?v=0.2.9
+   ```
+
+3. Recharger complètement le tableau de bord avec **Ctrl + F5**.
+
+Le chemin de la ressource doit correspondre exactement au dossier distant. Si le fichier est placé directement dans `t2c_clermontferrand_card`, retirer `/dist` de l'URL. Le suffixe `?v=0.2.9` permet de renouveler le cache ; il ne remplace pas le transfert du nouveau fichier.
+
+Seul le fichier JavaScript est nécessaire pour cette carte. Il n'est pas nécessaire de transférer les dossiers `.git`, `.github`, `.agents` ou `docs`. Éviter de conserver plusieurs copies actives de la carte à des emplacements différents.
 
 ## Utilisation
 
@@ -61,7 +84,7 @@ show_network_info: true
 | --- | --- | --- | --- |
 | `entity` | Oui |  | Entite `passage_1` de l'arret a afficher. |
 | `title` | Non | Nom de l'entite | Titre affiche en haut de la carte. |
-| `passages` | Non | `5` | Nombre de passages a afficher, entre 1 et 10. |
+| `passages` | Non | `5` | Nombre de passages a afficher, entre 1 et 6. Les valeurs superieures sont limitees a 6, y compris en YAML. |
 | `show_network_info` | Non | `false` | Affiche le bloc d'information generale du reseau si l'entite est detectee. |
 
 ## Convention d'entites
@@ -74,6 +97,7 @@ sensor.ligne_X_direction_YYY_arret_ZZZ_passage_2
 sensor.ligne_X_direction_YYY_arret_ZZZ_passage_3
 sensor.ligne_X_direction_YYY_arret_ZZZ_passage_4
 sensor.ligne_X_direction_YYY_arret_ZZZ_passage_5
+sensor.ligne_X_direction_YYY_arret_ZZZ_passage_6
 ```
 
 Exemple :
@@ -93,6 +117,11 @@ line: B
 route_id: B
 route_color: "#0069b4"
 route_text_color: "#ffffff"
+realtime: true
+theoretical: false
+estimated_at: "2026-10-15T22:26:33+02:00"
+scheduled_at: "2026-10-15T22:23:00+02:00"
+due_at: "2026-10-15T22:26:33+02:00"
 has_alert: true
 alert_icon: mdi:alert-circle
 alert_title: J. Mermoz reportes
@@ -100,7 +129,21 @@ alert_text: En raison de travaux, les arrets J. Mermoz seront reportes.
 updated_at: "2026-04-27T10:08:33"
 ```
 
-L'etat du capteur est utilise comme horaire ou temps d'attente.
+L'état du capteur est utilisé comme horaire ou temps d'attente. Les astérisques sont retirés uniquement de l'affichage : `*23:23` devient `23:23`. Les données du capteur ne sont pas modifiées.
+
+### Temps réel et horaires théoriques
+
+| Attribut | Temps réel | Théorique |
+| --- | --- | --- |
+| `realtime` | `true` | `false` |
+| `theoretical` | `false` | `true` |
+| `estimated_at` | Estimation valide | `null` |
+| `scheduled_at` | Horaire théorique | Horaire théorique |
+| `due_at` | Estimation utilisée | Horaire théorique utilisé |
+
+Un départ en temps réel porte une petite icône verte avec l'infobulle « Temps réel ». Un départ théorique affiche uniquement son horaire, sans astérisque, icône ni légende.
+
+L'icône de temps réel apparaît lorsque `realtime` vaut `true`. Elle reste masquée si `theoretical` vaut `true`, si le départ contient `*` ou si le capteur est indisponible. Si `realtime` est absent, un `estimated_at` contenant une date valide permet aussi d'afficher l'icône. `scheduled_at` et `due_at` seuls ne permettent pas de distinguer un horaire théorique d'une estimation.
 
 Les noms d'attributs sont lus de facon souple. Les variantes comme `Route ID`, `Route color`, `Route text color`, `Has alert`, `Alert icon`, `Alert title`, `Alert text` et `Updated at` sont prises en charge.
 
@@ -151,7 +194,35 @@ window.t2cClermontFerrandCardVersion
 
 Le premier appel doit retourner une classe JavaScript et le second doit retourner la version chargee de la carte.
 
+Pour le fichier actuel, la version attendue est `0.2.9`. La console affiche également `chargement 0.2.9` au chargement.
+
+Si une ancienne version apparaît ou si l'icône de temps réel manque :
+
+1. Vérifier que le fichier transféré provient bien du dossier `dist` du dépôt.
+2. Vérifier que l'URL de la ressource pointe sur ce fichier distant, en tenant compte du sous-dossier `dist` et du nom exact du dossier.
+3. Conserver une seule ressource pour cette carte et retirer les références aux anciennes copies.
+4. Pour une installation manuelle, actualiser le suffixe de version dans l'URL puis recharger avec **Ctrl + F5**.
+5. Si la bonne version est chargée, vérifier les attributs `realtime`, `theoretical` et `estimated_at` du capteur dans les outils de développement de Home Assistant.
+
 Si les deux valeurs sont `undefined`, Home Assistant n'a pas encore charge la ressource. Verifier le chemin, le type `Module JavaScript`, puis vider le cache du navigateur.
+
+## Publication de la version 0.2.9
+
+Avant de créer la release, publier les fichiers à jour sur GitHub, notamment `README.md`, `hacs.json` et `dist/t2c_clermont-ferrand_card.js`.
+
+- **Tag GitHub :** `v0.2.9`.
+- **Titre de la release :** `v0.2.9 — Indicateur de temps réel et affichage simplifié`.
+- **Fichier à joindre à la release :** `dist/t2c_clermont-ferrand_card.js`, sous le nom `t2c_clermont-ferrand_card.js`.
+- **Manifeste HACS :** `hacs.json`, à conserver à la racine du dépôt.
+
+Cette carte est un module de tableau de bord, pas une intégration Home Assistant : elle n'utilise pas de fichier `manifest.json`. Le numéro de version figure dans le fichier JavaScript et dans le tag de release ; aucun champ `version` n'est nécessaire dans `hacs.json`.
+
+### Nouveautés
+
+- Icône verte pour les départs en temps réel, inspirée de celle du réseau T2C.
+- Horaires théoriques affichés sans astérisque ni légende.
+- Nombre de passages limité à 6 dans l'éditeur et dans l'affichage, y compris avec une configuration YAML.
+- Documentation des attributs de temps réel, de l'installation manuelle et du diagnostic de cache.
 
 ## Licence
 

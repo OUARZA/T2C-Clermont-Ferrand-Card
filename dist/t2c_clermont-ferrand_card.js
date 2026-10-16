@@ -1,7 +1,7 @@
-window.t2cClermontFerrandCardVersion = "0.2.6";
+window.t2cClermontFerrandCardVersion = "0.2.9";
 
 console.info(
-  "%c T2C Clermont-Ferrand Card %c chargement 0.2.6 ",
+  "%c T2C Clermont-Ferrand Card %c chargement 0.2.9 ",
   "color: white; background: #b00010; font-weight: 700;",
   "color: #b00010; background: transparent; font-weight: 700;",
 );
@@ -186,6 +186,19 @@ class T2CClermontFerrandCard extends HTMLElement {
         white-space: nowrap;
       }
 
+      .t2c-realtime-icon {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        margin-left: 5px;
+        vertical-align: middle;
+        box-sizing: border-box;
+        padding: 3px;
+        border-radius: 50%;
+        background: #2d8571;
+        fill: #fff;
+      }
+
       .t2c-empty {
         color: var(--secondary-text-color);
         font-style: italic;
@@ -214,13 +227,6 @@ class T2CClermontFerrandCard extends HTMLElement {
         color: var(--secondary-text-color);
         font-size: 12px;
         margin-top: 8px;
-      }
-
-      .t2c-theoretical-note {
-        color: var(--secondary-text-color);
-        font-size: 12px;
-        margin-top: 8px;
-        text-align: left;
       }
 
       .t2c-alert-detail {
@@ -285,7 +291,7 @@ class T2CClermontFerrandCard extends HTMLElement {
     }
 
     const lineLabel = this.config.line || this._getLineLabel(this.config.entity);
-    const passages = Math.max(1, Math.min(Number(this.config.passages) || 5, 10));
+    const passages = Math.max(1, Math.min(Math.floor(Number(this.config.passages) || 5), 6));
     wrapper.style.setProperty("--t2c-header-color", "#ab161b");
 
     const title = document.createElement("h2");
@@ -308,7 +314,6 @@ class T2CClermontFerrandCard extends HTMLElement {
     `;
 
     const tbody = table.querySelector("tbody");
-    let hasTheoreticalTime = false;
 
     for (let index = 1; index <= passages; index += 1) {
       const entityId = this._getPassageEntity(index);
@@ -325,12 +330,11 @@ class T2CClermontFerrandCard extends HTMLElement {
         row.style.setProperty("--route-color", route.color);
         row.style.setProperty("--route-text-color", route.textColor);
         const alert = this._getAlertDisplay(state);
-        const departure = String(state.state || "-");
-        hasTheoreticalTime = hasTheoreticalTime || departure.includes("*");
+        const departure = String(state.state || "-").replace(/\*/g, "").trim();
         row.innerHTML = `
           <td><span class="t2c-line">${this._escape(route.label)}</span></td>
           <td class="t2c-destination">${this._escape(state.attributes.destination || "-")}</td>
-          <td class="t2c-time">${this._escape(departure)}</td>
+          <td class="t2c-time">${this._escape(departure)}${this._isRealtime(state) ? `<svg class="t2c-realtime-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Temps réel"><title>Temps réel</title><g><path d="M14,12c0,0.74-0.4,1.38-1,1.72V22h-2v-8.28c-0.6-0.35-1-0.98-1-1.72c0-1.1,0.9-2,2-2S14,10.9,14,12z"></path><path d="M12,6c-3.31,0-6,2.69-6,6c0,1.74,0.75,3.31,1.94,4.4l1.42-1.42C8.53,14.25,8,13.19,8,12c0-2.21,1.79-4,4-4s4,1.79,4,4c0,1.19-0.53,2.25-1.36,2.98l1.42,1.42C17.25,15.31,18,13.74,18,12C18,8.69,15.31,6,12,6z"></path><path d="M12,2C6.48,2,2,6.48,2,12c0,2.85,1.2,5.41,3.11,7.24l1.42-1.42C4.98,16.36,4,14.29,4,12c0-4.41,3.59-8,8-8s8,3.59,8,8c0,2.29-0.98,4.36-2.53,5.82l1.42,1.42C20.8,17.41,22,14.85,22,12C22,6.48,17.52,2,12,2z"></path></g></svg>` : ""}</td>
           <td class="t2c-info">${alert ? `<button class="t2c-alert-button" type="button" data-alert-index="${index}" aria-label="Afficher le detail de l'alerte"><ha-icon class="t2c-alert-icon" icon="${this._escapeAttr(alert.icon)}"></ha-icon></button>` : ""}</td>
         `;
       }
@@ -339,13 +343,6 @@ class T2CClermontFerrandCard extends HTMLElement {
     }
 
     wrapper.appendChild(table);
-
-    if (hasTheoreticalTime) {
-      const note = document.createElement("div");
-      note.className = "t2c-theoretical-note";
-      note.textContent = "* horaires théoriques";
-      wrapper.appendChild(note);
-    }
 
     const alertDetail = document.createElement("div");
     alertDetail.className = "t2c-alert-detail";
@@ -385,6 +382,20 @@ class T2CClermontFerrandCard extends HTMLElement {
       .replace(/"/g, "&quot;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
+  }
+
+  _isRealtime(state) {
+    if (!this._isDisplayableState(state?.state) || String(state.state).includes("*")) return false;
+
+    const attributes = state.attributes || {};
+    const realtime = this._getAttribute(attributes, ["realtime"]);
+    const theoretical = this._getAttribute(attributes, ["theoretical"]);
+    if (this._isTruthy(theoretical)) return false;
+    if (realtime !== undefined) return this._isTruthy(realtime);
+
+    // Older sensors may expose an estimate without the realtime flag.
+    const estimatedAt = this._getAttribute(attributes, ["estimated_at"]);
+    return typeof estimatedAt === "string" && Number.isFinite(Date.parse(estimatedAt));
   }
 
   _getRouteDisplay(state, fallbackLabel) {
@@ -568,10 +579,11 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
 
     const config = {
       ...this.config,
-      [key]: key === "passages" ? Number(value) : value,
+      [key]: key === "passages" ? Math.max(1, Math.min(Math.floor(Number(value) || 5), 6)) : value,
     };
 
     this.config = config;
+    if (key === "passages") target.value = String(config.passages);
     this.dispatchEvent(new CustomEvent("config-changed", {
       detail: { config },
       bubbles: true,
@@ -643,7 +655,7 @@ class T2CClermontFerrandCardEditor extends HTMLElement {
         </div>
         <div class="field">
           <label for="passages">Nombre de passages</label>
-          <input id="passages" type="number" min="1" max="10" value="${Number(this.config.passages) || 5}">
+          <input id="passages" type="number" min="1" max="6" step="1" value="${Math.max(1, Math.min(Math.floor(Number(this.config.passages) || 5), 6))}">
         </div>
         <label class="checkbox">
           <input id="show_network_info" type="checkbox" ${this.config.show_network_info ? "checked" : ""}>
